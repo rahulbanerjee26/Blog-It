@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+  
+    <title>Clean Blog - Start Bootstrap Theme</title>
+  
+    <!-- Bootstrap core CSS -->
+    <link href="{{ url_for('static', filename = 'bootstrap.min.css')}}" rel="stylesheet">
+  
+    <!-- Custom fonts for this template -->
+    <link href="{{url_for('static', filename = 'all.min.css')}}" rel="stylesheet" type="text/css">
+    <link href='https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/css'>
+  
+    <!-- Custom styles for this template -->
+    <link href="{{url_for('static', filename = 'clean-blog.min.css')}}" rel="stylesheet">
+
+<!-- https://developers.google.com/identity/sign-in/web/server-side-flow --> 
+
+<!--LOAD PRE-REQUISITES FOR GOOGLE SIGN IN -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script src="https://apis.google.com/js/client:platform.js?onload=start" async defer></script>
+<script>
+  function start() {
+    gapi.load('auth2', function() {
+      auth2 = gapi.auth2.init({
+        client_id: '93667004809-9qh7i6i5vgerpqmddvjevo6mhutb218h.apps.googleusercontent.com'
+      });
+    });
+  }
+</script>
+<!-- END PRE-REQUISITES FOR GOOGLE SIGN IN -->
+
+
+</head>
+
+
+<body>  
+
+<!-- Setup FB Java SDK -->
+<script>
+    window.fbAsyncInit = function() {
+      FB.init({
+        appId            : '555848444949256',
+        autoLogAppEvents : true,
+        xfbml            : true,
+        version          : 'v4.0'
+      });
+    };
+  </script>
+  <script async defer src="https://connect.facebook.net/en_US/sdk.js"></script>
+<!-- End Setup FB Java SDK-->  
+
+<!-- Navigation -->
+<nav class="navbar navbar-expand-lg navbar-light fixed-top" id="mainNav">
+        <div class="container">
+          <a class="navbar-brand" href="{{url_for('indexRoute')}}">Start Bootstrap</a>
+          <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+            Menu
+            <i class="fas fa-bars"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navbarResponsive">
+            <ul class="navbar-nav ml-auto">
+              <li class="nav-item">
+                <a class="nav-link" href="{{url_for('indexRoute')}}">Home</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{{url_for('aboutRoute')}}">About</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{{url_for('createPost')}}">Create Post</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{{url_for('contactRoute')}}">Contact</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </nav>
+  
+    <!-- Page Header -->
+    <header class="masthead" style="background-image: url('{{ url_for('static', filename='about-bg.jpg') }}')">
+      <div class="overlay"></div>
+      <div class="container">
+        <div class="row">
+          <div class="col-lg-8 col-md-10 mx-auto">
+            <div class="page-heading">
+              <h1>Log in</h1>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+     
+
+<!-- GOOGLE PLUS SIGN IN BUTTON-->
+<div class="row ">
+    <button class="col-2" style="margin: 0 auto; float: none" id="signinButton">Google Sign in</button> 
+</div>
+<!--END GOOGLE PLUS SIGN IN BUTTON -->
+
+<hr>
+
+<!-- FACEBOOK SIGN IN BUTTON -->
+<div class="row ">
+<button class="col-2" style="margin: 0 auto; float: none" >
+  <fb:login-button scope="public_profile,email" onlogin="sendTokenToServer();"> 
+    <a href='javascript:sendTokenToServer()'>Login with Facebook</a>
+  </fb:login-button>
+</button>
+</div>
+<!-- END FACEBOOK SIGN IN BUTTON-->
+
+<div id="result"></div>
+
+<!-- SIGN IN CALL BACK FUNCTION -->
+<script>
+    $('#signinButton').click(function(){
+    function signInCallback(authResult){          
+      //app is authorised
+      if (authResult['code']){
+      //hide sign-in button
+          $.ajax({
+            type: 'POST',
+            url: '/gconnect?state={{STATE}}',
+            // Always include an `X-Requested-With` header in every AJAX request,
+            // to protect against CSRF attacks.
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            contentType: 'application/octet-stream; charset=utf-8',
+            processData: false,
+            //one time code
+            data: authResult['code'],
+              success: function(result){
+                  if(result){
+                      $('#result').html('Login Succesfull!<br>' + result +'<br> Redirecting......')
+                      setTimeout(function(){
+                          window.location.href = '/'
+                      },3000)
+                  }
+              }
+          })
+        //error 
+      }else if (authResult['error']){
+          console.log('There was an error' + authResult['error'])
+      } //no result
+      else{
+           $('#result').html("Failed to make call, check your console!")
+        }
+    }
+    auth2.grantOfflineAccess().then(signInCallback);
+    });
+
+    function sendTokenToServer(){
+      var access_token = FB.getAuthResponse()['accessToken'];
+      console.log("Access Token is " + access_token)
+      //send the one time access token  to server
+      $.ajax(
+        {
+          type: 'POST',
+          processData: false,
+          data: access_token,
+          url: '/fbconnect?state={{STATE}}',
+          contentType: 'application/octet-stream; charset=utf-8',
+          headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+          success: function(result){
+                      if (result) {
+                          $('#result').html('Login Successful!</br>'+ result + '</br>Redirecting...')
+                          setTimeout(function() {
+                                      window.location.href = "/";
+                          }, 3000);
+                        } else {
+                          $('#result').html('Failed to make a server-side call. Check your configuration and console.');
+                        }
+        }
+      } 
+      )
+
+    }
+
+</script>       
+
+  <!-- Bootstrap core JavaScript -->
+  <script src="vendor/jquery/jquery.min.js"></script>
+  <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Custom scripts for this template -->
+  <script src="js/clean-blog.min.js"></script>
+
+<!-- END CALLBACK FUNCTION -->
+
+</body>
+
+  </html>
+
+ 
